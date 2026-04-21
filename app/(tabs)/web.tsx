@@ -77,6 +77,8 @@ export default function WebScreen() {
         injectedJavaScriptBeforeContentLoaded={injectedJS || 'true;'}
         javaScriptEnabled={true}
         domStorageEnabled={true}
+        scalesPageToFit={false}
+        setBuiltInZoomControls={false}
       />
     </SafeAreaView>
   );
