@@ -3,10 +3,14 @@ import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/auth';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 
 export default function WebScreen() {
   const { user, isLoading } = useAuth();
   const [injectedJS, setInjectedJS] = useState<string | null>(null);
+  const colorScheme = useColorScheme();
+  const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
 
   useEffect(() => {
     const prepareAuthInjection = async () => {
@@ -63,22 +67,24 @@ export default function WebScreen() {
 
   if (isLoading || (user && !injectedJS)) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View style={[styles.loading, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.tint} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <WebView 
         source={{ uri: 'https://liftly-9f56a.web.app' }} 
-        style={styles.webview}
+        style={[styles.webview, { backgroundColor: theme.background }]}
         injectedJavaScriptBeforeContentLoaded={injectedJS || 'true;'}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         scalesPageToFit={false}
         setBuiltInZoomControls={false}
+        bounces={false}
+        overScrollMode="never"
       />
     </SafeAreaView>
   );
