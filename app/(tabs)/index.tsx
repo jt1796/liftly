@@ -9,7 +9,7 @@ import { Link } from 'expo-router';
 import { useAuth } from '@/context/auth';
 
 export default function HomeScreen() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <ParallaxScrollView
@@ -21,7 +21,7 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
+        <ThemedText type="title">Welcome{user?.displayName ? ` ${user.displayName}` : user?.email ? ` ${user.email}` : ''}!</ThemedText>
         <HelloWave />
       </ThemedView>
 

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 
 import { Collapsible } from '@/components/ui/collapsible';
 import { ExternalLink } from '@/components/external-link';
@@ -8,8 +9,37 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Fonts } from '@/constants/theme';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function TabTwoScreen() {
+  const [storageDump, setStorageDump] = useState<string | null>(null);
+
+  const dumpStorage = async () => {
+    try {
+      const keys = await ReactNativeAsyncStorage.getAllKeys();
+      const result = await ReactNativeAsyncStorage.multiGet(keys);
+      let dumpText = '';
+      result.forEach(([key, value]) => {
+        dumpText += `${key}:\n${value}\n\n`;
+      });
+      setStorageDump(dumpText || 'Storage is empty');
+      console.log('--- AsyncStorage Dump ---\n', dumpText);
+    } catch (error) {
+      console.error('Error dumping storage:', error);
+      alert('Error dumping storage');
+    }
+  };
+
+  const clearStorage = async () => {
+    try {
+      await ReactNativeAsyncStorage.clear();
+      setStorageDump(null);
+      alert('Storage cleared! You may need to restart the app.');
+    } catch (error) {
+      console.error('Error clearing storage:', error);
+    }
+  };
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
@@ -31,6 +61,34 @@ export default function TabTwoScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedText>This app includes example code to help you get started.</ThemedText>
+
+      <Collapsible title="Debug Storage">
+        <ThemedText>
+          Use these buttons to inspect or reset the local app storage (AsyncStorage).
+        </ThemedText>
+        <ThemedView style={styles.debugButtons}>
+          <TouchableOpacity style={[styles.button, styles.dumpButton]} onPress={dumpStorage}>
+            <ThemedText type="defaultSemiBold" style={{ color: 'white' }}>Show on Screen</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.clearButton]} onPress={clearStorage}>
+            <ThemedText type="defaultSemiBold" style={{ color: 'white' }}>Clear All</ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
+
+        {storageDump && (
+          <ThemedView style={styles.dumpContainer}>
+            <ThemedView style={styles.dumpHeader}>
+              <ThemedText type="defaultSemiBold">Current Storage:</ThemedText>
+              <TouchableOpacity onPress={() => setStorageDump(null)}>
+                <ThemedText type="link">Hide</ThemedText>
+              </TouchableOpacity>
+            </ThemedView>
+            <ScrollView style={styles.dumpScroll} nestedScrollEnabled={true}>
+              <ThemedText style={styles.dumpText}>{storageDump}</ThemedText>
+            </ScrollView>
+          </ThemedView>
+        )}
+      </Collapsible>
       <Collapsible title="File-based routing">
         <ThemedText>
           This app has two screens:{' '}
@@ -108,5 +166,42 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     gap: 8,
+  },
+  debugButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  button: {
+    padding: 10,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
+  },
+  dumpButton: {
+    backgroundColor: '#2196F3',
+  },
+  clearButton: {
+    backgroundColor: '#f44336',
+  },
+  dumpContainer: {
+    marginTop: 15,
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  dumpHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  dumpScroll: {
+    maxHeight: 200,
+  },
+  dumpText: {
+    fontFamily: Fonts.mono,
+    fontSize: 12,
   },
 });

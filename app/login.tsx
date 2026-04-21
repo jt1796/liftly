@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
 import { useAuth } from '@/context/auth';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -11,9 +11,9 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       await signInWithGoogle();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      // Handle error (e.g., show an alert)
+      Alert.alert('Sign-In Error', error.message || 'An unknown error occurred during sign-in.');
     }
   };
 
