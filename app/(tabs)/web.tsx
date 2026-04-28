@@ -5,12 +5,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/auth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function WebScreen() {
   const { user, isLoading } = useAuth();
   const [injectedJS, setInjectedJS] = useState<string | null>(null);
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  const { path } = useLocalSearchParams<{ path: string }>();
+
+  const baseUri = 'https://liftly-9f56a.web.app';
+  const targetUri = path ? `${baseUri}/${path}` : baseUri;
 
   useEffect(() => {
     const prepareAuthInjection = async () => {
@@ -76,7 +81,7 @@ export default function WebScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <WebView 
-        source={{ uri: 'https://liftly-9f56a.web.app' }} 
+        source={{ uri: targetUri }} 
         style={[styles.webview, { backgroundColor: theme.background }]}
         injectedJavaScriptBeforeContentLoaded={injectedJS || 'true;'}
         javaScriptEnabled={true}
