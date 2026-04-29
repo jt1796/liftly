@@ -10,17 +10,35 @@
         android:id="@+id/widget_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Liftly"
-        android:textSize="18sp"
+        android:text="Workout Heatmap"
+        android:textSize="14sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF" />
+
+    <TextView
+        android:id="@+id/widget_error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FF3B30"
+        android:textSize="12sp"
+        android:visibility="gone"
+        android:layout_marginTop="4dp" />
+
+    <ImageView
+        android:id="@+id/heatmap_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter" />
 
     <Button
         android:id="@+id/widget_button"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:layout_marginTop="8dp"
         android:text="Start Workout"
+        android:textSize="12sp"
         android:backgroundTint="#007AFF"
         android:textColor="#FFFFFF" />
 

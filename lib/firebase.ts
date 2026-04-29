@@ -1,6 +1,6 @@
-import { initializeApp } from "firebase/app";
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import { initializeApp, getApp, getApps } from "firebase/app";
+import { getAuth as getJSAuth } from 'firebase/auth';
 
 // TODO: Replace with your actual Firebase configuration
 const firebaseConfig = {
@@ -13,7 +13,39 @@ const firebaseConfig = {
   measurementId: 'G-9PM7NSZJD1'
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-});
+// Initialize JS SDK
+let app: any;
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
+
+/**
+ * On native, we use @react-native-firebase/auth which automatically shares 
+ * auth state with the native Kotlin/Swift code.
+ * On web, we use the standard Firebase JS SDK.
+ */
+const getAuthInstance = () => {
+  if (Platform.OS === 'web') {
+    return getJSAuth(app);
+  } else {
+    return require('@react-native-firebase/auth').default();
+  }
+};
+
+export const auth = getAuthInstance();
+
+/**
+ * Unified onAuthStateChanged that works on both web and native
+ */
+export const onAuthStateChanged = (callback: (user: any) => void) => {
+  if (Platform.OS === 'web') {
+    const { onAuthStateChanged: jsOnAuthStateChanged } = require('firebase/auth');
+    return jsOnAuthStateChanged(auth, callback);
+  } else {
+    return auth.onAuthStateChanged(callback);
+  }
+};
+
+export { app };

@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, signOut as firebaseSignOut, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { auth } from '@/lib/firebase';
+import { auth, onAuthStateChanged } from '@/lib/firebase';
+import { Platform } from 'react-native';
+
+// Types for cross-platform compatibility
+type FirebaseUser = any; 
 
 interface AuthContextType {
-  user: User | null;
+  user: FirebaseUser | null;
   isLoading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -13,7 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -22,12 +25,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       offlineAccess: true,
     });
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged((user: FirebaseUser) => {
       setUser(user);
       setIsLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const signInWithGoogle = async () => {
@@ -35,24 +42,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await GoogleSignin.hasPlayServices();
       const response = await GoogleSignin.signIn();
       
-      // In newer versions of the library, the response format changed
       const data = 'data' in response ? response.data : response;
       const idToken = data?.idToken;
       
       if (!idToken) {
-        console.error('Google Sign-In response:', JSON.stringify(response));
-        throw new Error('No idToken returned from Google Sign-In. Check webClientId and SHA-1.');
+        throw new Error('No idToken returned from Google Sign-In.');
       }
 
-      const credential = GoogleAuthProvider.credential(idToken);
-      await signInWithCredential(auth, credential);
+      if (Platform.OS === 'web') {
+        const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+        const credential = GoogleAuthProvider.credential(idToken);
+        await signInWithCredential(auth, credential);
+      } else {
+        // Native SDK
+        const authModule = require('@react-native-firebase/auth').default;
+        const credential = authModule.GoogleAuthProvider.credential(idToken);
+        await auth.signInWithCredential(credential);
+        
+        // Trigger widget update on Android
+        if (Platform.OS === 'android') {
+          try {
+            const { NativeModules } = require('react-native');
+            if (NativeModules.WidgetModule) {
+              NativeModules.WidgetModule.refreshWidgets();
+            }
+          } catch (e) {
+            console.log('Widget module not found, skipping refresh');
+          }
+        }
+      }
     } catch (error: any) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         console.log('User cancelled the login flow');
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log('Sign-in in progress');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log('Play services not available or outdated');
       } else {
         console.error('Google Sign-In Error:', error.code, error.message);
       }
@@ -63,7 +84,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await GoogleSignin.signOut();
-      await firebaseSignOut(auth);
+      
+      if (Platform.OS === 'web') {
+        const { signOut: firebaseSignOut } = await import('firebase/auth');
+        await firebaseSignOut(auth);
+      } else {
+        await auth.signOut();
+        
+        // Trigger widget update on Android
+        if (Platform.OS === 'android') {
+          try {
+            const { NativeModules } = require('react-native');
+            if (NativeModules.WidgetModule) {
+              NativeModules.WidgetModule.refreshWidgets();
+            }
+          } catch (e) {
+            // Ignore
+          }
+        }
+      }
     } catch (error) {
       console.error('Sign-Out Error:', error);
     }
