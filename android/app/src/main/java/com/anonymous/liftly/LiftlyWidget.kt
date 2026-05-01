@@ -35,7 +35,7 @@ class LiftlyWidget : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_layout)
             
             // Set up click intent
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("liftly://web?path=workout"))
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("liftly://?path=workout"))
             val pendingIntent = PendingIntent.getActivity(
                 context, 
                 0, 
@@ -90,6 +90,10 @@ class LiftlyWidget : AppWidgetProvider() {
                     
                     val bitmap = generateHeatmapBitmap(workoutDates)
                     views.setImageViewBitmap(R.id.heatmap_image, bitmap)
+                    
+                    val currentTimestamp = SimpleDateFormat("MMM d, yyyy, h:mm:ss a z", Locale.US).format(Date())
+                    views.setTextViewText(R.id.widget_title, "Last generated: $currentTimestamp")
+                    
                     views.setViewVisibility(R.id.widget_error, View.GONE)
                     views.setViewVisibility(R.id.heatmap_image, View.VISIBLE)
                     appWidgetManager.updateAppWidget(appWidgetId, views)
