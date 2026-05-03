@@ -24,6 +24,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="blocker"
+        options={{
+          title: 'Blocker',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="hand.raised.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="debug"
         options={{
           title: 'Debug',
