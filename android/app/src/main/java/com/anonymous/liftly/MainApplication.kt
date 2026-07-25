@@ -14,19 +14,12 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
 import com.facebook.react.defaults.DefaultReactNativeHost
 
 import expo.modules.ApplicationLifecycleDispatcher
-import expo.modules.ReactNativeHostWrapper
+import expo.modules.ExpoReactHostFactory
 
 class MainApplication : Application(), ReactApplication {
 
-  override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
-      this,
-      object : DefaultReactNativeHost(this) {
-        override fun getPackages(): List<ReactPackage> =
-            PackageList(this).packages.apply {
-              // Packages that cannot be autolinked yet can be added manually here, for example:
-              add(WidgetPackage())
-              add(UrlBlockerPackage())
-            }
+  override val reactNativeHost: ReactNativeHost = object : DefaultReactNativeHost(this) {
+        override fun getPackages(): List<ReactPackage> = this@MainApplication.getPackages()
 
           override fun getJSMainModuleName(): String = ".expo/.virtual-metro-entry"
 
@@ -34,10 +27,17 @@ class MainApplication : Application(), ReactApplication {
 
           override val isNewArchEnabled: Boolean = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
       }
-  )
 
   override val reactHost: ReactHost
-    get() = ReactNativeHostWrapper.createReactHost(applicationContext, reactNativeHost)
+    get() = ExpoReactHostFactory.getDefaultReactHost(this, getPackages())
+
+  private fun getPackages(): List<ReactPackage> {
+    return PackageList(this).packages.apply {
+      // Packages that cannot be autolinked yet can be added manually here, for example:
+      add(WidgetPackage())
+      add(UrlBlockerPackage())
+    }
+  }
 
   override fun onCreate() {
     super.onCreate()

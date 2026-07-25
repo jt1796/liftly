@@ -66,8 +66,8 @@ class LiftlyWidget : AppWidgetProvider() {
 
             val db = FirebaseFirestore.getInstance()
             
-            // We fetch all workouts for the user and filter locally to avoid index requirements
-            db.collection("workouts")
+            // Fetch year-bucketed workout documents (~3-4 reads instead of N)
+            db.collection("workoutYears")
                 .whereEqualTo("userId", user.uid)
                 .get()
                 .addOnSuccessListener { documents ->
@@ -78,12 +78,17 @@ class LiftlyWidget : AppWidgetProvider() {
                     cal.add(Calendar.YEAR, -1)
                     val oneYearAgo = cal.time
 
-                    for (doc in documents) {
-                        val timestamp = doc.getTimestamp("date")
-                        if (timestamp != null) {
-                            val date = timestamp.toDate()
-                            if (date.after(oneYearAgo)) {
-                                workoutDates.add(sdf.format(date))
+                    for (yearDoc in documents) {
+                        // Each year doc has a "workouts" map: { workoutId -> { date, exercises, ... } }
+                        @Suppress("UNCHECKED_CAST")
+                        val workoutsMap = yearDoc.get("workouts") as? Map<String, Map<String, Any>> ?: continue
+                        for ((_, workoutData) in workoutsMap) {
+                            val timestamp = workoutData["date"] as? com.google.firebase.Timestamp
+                            if (timestamp != null) {
+                                val date = timestamp.toDate()
+                                if (date.after(oneYearAgo)) {
+                                    workoutDates.add(sdf.format(date))
+                                }
                             }
                         }
                     }
